@@ -1,19 +1,20 @@
-FROM openjdk:8-jdk
+FROM ubuntu:16.04
 
 # ------------------------------------------------------
 # --- Install required tools
 
-RUN apt-get update -qq
-
 # Never ask for confirmations
 ENV DEBIAN_FRONTEND noninteractive
 
-# Dependencies to execute Android builds
-RUN cd /tmp/ && wget -q https://services.gradle.org/distributions/gradle-3.3-all.zip && \
-	unzip -d /opt/gradle gradle-3.3-all.zip && \
-	rm /tmp/gradle-3.3-all.zip
+RUN apt-get update -qq
+RUN apt-get install -y libqt5widgets5 wget curl openjdk-8-jdk qemu-kvm libvirt-bin unzip
 
-ENV PATH ${PATH}:/opt/gradle/gradle-3.3/bin
+# Dependencies to execute Android builds
+#RUN cd /tmp/ && wget -q https://services.gradle.org/distributions/gradle-3.3-all.zip && \
+#	unzip -d /opt/gradle gradle-3.3-all.zip && \
+#	rm /tmp/gradle-3.3-all.zip
+
+#ENV PATH ${PATH}:/opt/gradle/gradle-3.3/bin
 
 # Install android sdk
 RUN cd /tmp && curl -o android.zip https://dl.google.com/android/repository/tools_r25.2.3-linux.zip && \
@@ -31,14 +32,24 @@ RUN apt-get clean && apt-get autoclean && apt-get autoremove
 
 
 # Install latest android tools and system images
+#RUN ( sleep 4 && while [ 1 ]; do sleep 1; echo y; done ) | android update sdk --no-ui --force -a --filter \
+#	platform-tool,android-25,android-24,build-tools-25.0.3,sys-img-x86_64-google_apis-25,sys-img-x86_64-google_apis-24,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services && \
+#	echo "y" | android update adb
+
 RUN ( sleep 4 && while [ 1 ]; do sleep 1; echo y; done ) | android update sdk --no-ui --force -a --filter \
-	platform-tool,android-25,android-24,build-tools-25.0.3,sys-img-x86_64-google_apis-25,sys-img-x86_64-google_apis-24,extra-android-m2repository,extra-google-m2repository,extra-google-google_play_services && \
+	platform-tool,android-25,build-tools-25.0.3,sys-img-x86_64-google_apis-25 && \
 	echo "y" | android update adb
 
 # Support Gradle
 ENV TERM dumb
 ENV JAVA_OPTS "-Xms512m -Xmx1024m"
 ENV GRADLE_OPTS "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000"
+
+# Create avd
+# echo "no" | android create avd --force --name test --target android-25 --abi google_apis/x86_64
+#emulator64-x86 -avd test -no-window -no-audio
+
+
 
 # auto accept licenses
 RUN mkdir -p "$ANDROID_HOME/licenses"
